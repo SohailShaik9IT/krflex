@@ -15,6 +15,7 @@
   requireLogin();
 
   let employees = [];
+  let branches = [];
 
   function render() {
     const admin = KRFlexAPI.isAdmin();
@@ -28,8 +29,16 @@
           <div class="panel">
             <h3>Today's Attendance</h3>
             <table class="data-table">
-              <thead><tr><th>Name</th><th>Designation</th><th>Status</th><th>Checked In</th></tr></thead>
-              <tbody id="attRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Branch</th>
+                  <th>Designation</th>
+                  <th>Status</th>
+                  <th>Checked In</th>
+                </tr>
+              </thead>
+              <tbody id="attRows"><tr><td colspan="5">Loading...</td></tr></tbody>
             </table>
           </div>
 
@@ -37,8 +46,16 @@
           <div class="panel">
             <h3>Employees</h3>
             <table class="data-table">
-              <thead><tr><th>Name</th><th>Mobile</th><th>Designation</th><th>Status</th></tr></thead>
-              <tbody id="empRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Mobile</th>
+                  <th>Branch</th>
+                  <th>Designation</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="empRows"><tr><td colspan="5">Loading...</td></tr></tbody>
             </table>
           </div>
 
@@ -49,6 +66,12 @@
               <div><label>Mobile</label><input id="empMobile" /></div>
               <div><label>Email (optional)</label><input id="empEmail" /></div>
               <div><label>Designation</label><input id="empDesignation" /></div>
+              <div>
+                <label>Branch</label>
+                <select id="empBranch">
+                  <option value="">Select branch</option>
+                </select>
+              </div>
               <div><label>Joining Date</label><input id="empJoining" type="date" /></div>
               <div><label>Salary</label><input id="empSalary" type="number" min="0" step="500" /></div>
             </div>
@@ -58,10 +81,24 @@
           <div class="panel">
             <h3>✅ Mark Attendance</h3>
             <div class="form-grid">
-              <div><label>Employee</label><select id="attEmp"></select></div>
-              <div><label>Status</label>
+              <div>
+                <label>Branch</label>
+                <select id="attBranch">
+                  <option value="">All branches</option>
+                </select>
+              </div>
+              <div>
+                <label>Employee</label>
+                <select id="attEmp">
+                  <option value="">Select employee</option>
+                </select>
+              </div>
+              <div>
+                <label>Status</label>
                 <select id="attStatus">
-                  <option>Present</option><option>Absent</option><option>Leave</option>
+                  <option>Present</option>
+                  <option>Absent</option>
+                  <option>Leave</option>
                 </select>
               </div>
             </div>
@@ -74,9 +111,11 @@
 
     loadAttendanceToday();
     if (admin) {
-      loadEmployees();
       document.getElementById('addEmpBtn').addEventListener('click', addEmployee);
       document.getElementById('markAttBtn').addEventListener('click', markAttendance);
+      document.getElementById('attBranch').addEventListener('change', fillAttendanceEmployees);
+      document.getElementById('attEmp').addEventListener('change', syncBranchFromEmployee);
+      loadBranchesAndEmployees();
     }
   }
 
@@ -85,23 +124,77 @@
       const rows = await KRFlexAPI.get('/hr/attendance/today');
       const tbody = document.getElementById('attRows');
       tbody.innerHTML = rows.length
-        ? rows.map(r => `<tr><td>${r.name}</td><td>${r.designation || '-'}</td><td>${r.status}</td><td>${r.check_in ? epochToDateTimeStr(r.check_in) : '-'}</td></tr>`).join('')
-        : '<tr><td colspan="4">No attendance marked for today yet.</td></tr>';
+        ? rows.map(r => `
+            <tr>
+              <td>${r.name}</td>
+              <td>${r.branch_name || '-'}</td>
+              <td>${r.designation || '-'}</td>
+              <td>${r.status}</td>
+              <td>${r.check_in ? epochToDateTimeStr(r.check_in) : '-'}</td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="5">No attendance marked for today yet.</td></tr>';
     } catch (err) {
       showToast(err.message, true);
     }
   }
 
-  async function loadEmployees() {
+  async function loadBranchesAndEmployees() {
     try {
-      employees = await KRFlexAPI.get('/hr/employees');
+      [branches, employees] = await Promise.all([
+        KRFlexAPI.get('/branches'),
+        KRFlexAPI.get('/hr/employees'),
+      ]);
+
+      const branchOptions =
+        branches.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+
+      document.getElementById('empBranch').innerHTML =
+        '<option value="">Select branch</option>' + branchOptions;
+      document.getElementById('attBranch').innerHTML =
+        '<option value="">All branches</option>' + branchOptions;
+
       document.getElementById('empRows').innerHTML = employees.length
-        ? employees.map(e => `<tr><td>${e.name}</td><td>${e.mobile}</td><td>${e.designation || '-'}</td><td>${e.status}</td></tr>`).join('')
-        : '<tr><td colspan="4">No employees added yet.</td></tr>';
-      document.getElementById('attEmp').innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        ? employees.map(e => `
+            <tr>
+              <td>${e.name}</td>
+              <td>${e.mobile}</td>
+              <td>${e.branch_name || '-'}</td>
+              <td>${e.designation || '-'}</td>
+              <td>${e.status}</td>
+            </tr>
+          `).join('')
+        : '<tr><td colspan="5">No employees added yet.</td></tr>';
+
+      fillAttendanceEmployees();
     } catch (err) {
       showToast(err.message, true);
     }
+  }
+
+  function fillAttendanceEmployees() {
+    const branchId = document.getElementById('attBranch').value;
+    const selectedEmp = document.getElementById('attEmp').value;
+    const filtered = branchId
+      ? employees.filter(e => String(e.branch_id) === String(branchId))
+      : employees;
+
+    document.getElementById('attEmp').innerHTML = filtered.length
+      ? '<option value="">Select employee</option>' +
+        filtered.map(e =>
+          `<option value="${e.id}" data-branch-id="${e.branch_id || ''}">${e.name}${e.branch_name ? ' — ' + e.branch_name : ''}</option>`
+        ).join('')
+      : '<option value="">No employees</option>';
+
+    if (selectedEmp && filtered.some(e => String(e.id) === String(selectedEmp))) {
+      document.getElementById('attEmp').value = selectedEmp;
+    }
+  }
+
+  function syncBranchFromEmployee() {
+    const opt = document.getElementById('attEmp').selectedOptions[0];
+    if (!opt || !opt.dataset.branchId) return;
+    document.getElementById('attBranch').value = opt.dataset.branchId;
   }
 
   async function addEmployee() {
@@ -109,16 +202,25 @@
     const mobile = document.getElementById('empMobile').value.trim();
     const email = document.getElementById('empEmail').value.trim();
     const designation = document.getElementById('empDesignation').value.trim();
+    const branchId = parseInt(document.getElementById('empBranch').value, 10);
     const joining = document.getElementById('empJoining').value;
     const salary = parseFloat(document.getElementById('empSalary').value) || null;
     if (!name || !mobile) {
       showToast('Name and Mobile are required', true);
       return;
     }
+    if (!branchId) {
+      showToast('Please select the branch this employee works in', true);
+      return;
+    }
     try {
       await KRFlexAPI.post('/hr/employees', {
-        name, mobile, email: email || null, designation,
-        joiningDate: joining ? Math.floor(new Date(joining + 'T00:00:00Z').getTime() / 1000) : undefined,
+        name,
+        mobile,
+        email: email || null,
+        designation,
+        branchId,
+        joiningDate: joining ? Math.floor(new Date(joining + 'T00:00:00').getTime() / 1000) : undefined,
         salary,
       });
       showToast(`Added ${name}`);
@@ -131,7 +233,7 @@
   async function markAttendance() {
     const employeeId = document.getElementById('attEmp').value;
     const status = document.getElementById('attStatus').value;
-    if (!employeeId) { showToast('Add employees first', true); return; }
+    if (!employeeId) { showToast('Please select an employee', true); return; }
     try {
       await KRFlexAPI.post(`/hr/attendance?employeeId=${employeeId}&status=${status}`, {});
       showToast(`Marked attendance as ${status}`);

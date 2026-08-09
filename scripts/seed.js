@@ -15,8 +15,8 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@123';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'smdquadeer@krflex.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Ayesha@2017';
 const ADMIN_FULL_NAME = process.env.ADMIN_FULL_NAME || 'SMD Quadeer';
 
 async function main() {

@@ -5,7 +5,8 @@
   "private": true,
   "dependencies": {
     "@neondatabase/serverless": "^0.10.1",
+    "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3"
+    "pg": "^8.23.0"
   }
 }

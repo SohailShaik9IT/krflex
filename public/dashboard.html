@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Dashboard - KRFLEX</title>
 <link rel="stylesheet" href="/css/style.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -15,6 +16,7 @@
   requireAdminPage();
 
   let currentPeriod = 'daily';
+  let chartInstance = null;
 
   function render() {
     document.getElementById('app').innerHTML = `
@@ -28,6 +30,13 @@
             ).join('')}
           </div>
           <div class="metric-row" id="metrics"><p>Loading...</p></div>
+
+          <div class="panel">
+            <h3>Orders &amp; Sq.Ft — ${currentPeriod.charAt(0).toUpperCase() + currentPeriod.slice(1)}</h3>
+            <div class="chart-wrap">
+              <canvas id="dashboardChart" height="120"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -46,14 +55,89 @@
     try {
       const data = await KRFlexAPI.get('/dashboard', { period: currentPeriod });
       document.getElementById('metrics').innerHTML = `
-        <div class="metric-card"><div class="label">👷 Employees Working Today</div><div class="value">${data.employeesWorkingToday}</div></div>
         <div class="metric-card"><div class="label">👥 Total Customers</div><div class="value">${data.totalCustomers}</div></div>
         <div class="metric-card"><div class="label">📐 Sq.Ft Sold (${currentPeriod})</div><div class="value">${Number(data.totalSqftSold).toFixed(2)}</div></div>
         <div class="metric-card"><div class="label">📦 Total Orders (${currentPeriod})</div><div class="value">${data.totalOrders}</div></div>
       `;
+      renderChart(data.chart || { labels: [], orders: [], sqft: [] });
     } catch (err) {
       showToast(err.message, true);
     }
+  }
+
+  function renderChart(chart) {
+    const canvas = document.getElementById('dashboardChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
+
+    chartInstance = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: chart.labels,
+        datasets: [
+          {
+            label: 'Orders',
+            data: chart.orders,
+            backgroundColor: '#14213d',
+            borderRadius: 6,
+            yAxisID: 'yOrders',
+          },
+          {
+            label: 'Sq.Ft Sold',
+            data: chart.sqft,
+            backgroundColor: '#fca311',
+            borderRadius: 6,
+            yAxisID: 'ySqft',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: {
+            callbacks: {
+              label(ctx) {
+                const v = ctx.parsed.y;
+                if (ctx.dataset.label === 'Sq.Ft Sold') return ` Sq.Ft: ${Number(v).toFixed(2)}`;
+                return ` Orders: ${v}`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 0,
+              autoSkip: true,
+              maxTicksLimit: currentPeriod === 'monthly' ? 15 : 24,
+            },
+            grid: { display: false },
+          },
+          yOrders: {
+            type: 'linear',
+            position: 'left',
+            beginAtZero: true,
+            title: { display: true, text: 'Orders' },
+            ticks: { precision: 0 },
+          },
+          ySqft: {
+            type: 'linear',
+            position: 'right',
+            beginAtZero: true,
+            title: { display: true, text: 'Sq.Ft' },
+            grid: { drawOnChartArea: false },
+          },
+        },
+      },
+    });
   }
 
   render();

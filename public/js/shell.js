@@ -51,16 +51,26 @@ function showToast(message, isError = false) {
   setTimeout(() => el.remove(), 3000);
 }
 
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function epochToDate(epoch) {
+  if (epoch == null || epoch === '') return null;
+  const d = new Date(Number(epoch) * 1000);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 function epochToDateStr(epoch) {
-  if (!epoch) return '-';
-  const d = new Date(epoch * 1000);
-  return d.toISOString().slice(0, 10);
+  const d = epochToDate(epoch);
+  if (!d) return '-';
+  // Local calendar date (not UTC)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 function epochToDateTimeStr(epoch) {
-  if (!epoch) return '-';
-  const d = new Date(epoch * 1000);
-  return d.toISOString().slice(0, 16).replace('T', ' ');
+  const d = epochToDate(epoch);
+  if (!d) return '-';
+  // Local date + time (not UTC)
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 }
 
 function statusBadge(status) {

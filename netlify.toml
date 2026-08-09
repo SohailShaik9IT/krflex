@@ -3,6 +3,12 @@
   functions = "netlify/functions"
   command = "npm install"
 
+[dev]
+  publish = "public"
+  functions = "netlify/functions"
+  port = 8888
+  autoLaunch = false
+
 [functions]
   node_bundler = "esbuild"
 
@@ -30,6 +36,11 @@
 [[redirects]]
   from = "/api/materials/:id/adjust"
   to = "/.netlify/functions/materials-adjust?id=:id"
+  status = 200
+
+[[redirects]]
+  from = "/api/materials/:id"
+  to = "/.netlify/functions/materials?id=:id"
   status = 200
 
 [[redirects]]
@@ -82,8 +93,5 @@
   to = "/.netlify/functions/hr-attendance"
   status = 200
 
-# SPA fallback for the static frontend
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Multi-page app — no SPA catch-all. A /* → index.html rewrite
+# causes netlify dev to 403 static /js and /css assets on Windows.

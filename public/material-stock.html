@@ -35,8 +35,17 @@
           <div class="panel">
             <h3>Current Stock</h3>
             <table class="data-table">
-              <thead><tr><th>Media Name</th><th>Size</th><th>No. of Rolls</th><th>Media Brand</th><th>Adjust</th></tr></thead>
-              <tbody id="stockRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+              <thead>
+                <tr>
+                  <th>Media Name</th>
+                  <th>Size</th>
+                  <th>No. of Rolls</th>
+                  <th>Media Brand</th>
+                  <th>Adjust</th>
+                  <th>Delete</th>
+                </tr>
+              </thead>
+              <tbody id="stockRows"><tr><td colspan="6">Loading...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -52,7 +61,7 @@
       const materials = await KRFlexAPI.get('/materials');
       const tbody = document.getElementById('stockRows');
       if (!materials.length) {
-        tbody.innerHTML = '<tr><td colspan="5">No materials added yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6">No materials added yet.</td></tr>';
         return;
       }
       tbody.innerHTML = materials.map(m => `
@@ -64,6 +73,9 @@
           <td>
             <button class="qty-btn" onclick="adjust(${m.id}, -1)">➖</button>
             <button class="qty-btn" onclick="adjust(${m.id}, 1)">➕</button>
+          </td>
+          <td>
+            <button class="qty-btn danger-btn" onclick="deleteMaterial(${m.id}, '${String(m.media_name).replace(/'/g, "\\'")}')">Delete</button>
           </td>
         </tr>
       `).join('');
@@ -94,6 +106,17 @@
     try {
       const updated = await KRFlexAPI.patch(`/materials/${id}/adjust`, { delta });
       document.getElementById(`rolls_${id}`).textContent = updated.no_of_rolls;
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function deleteMaterial(id, name) {
+    if (!confirm(`Delete material "${name}"?`)) return;
+    try {
+      await KRFlexAPI.del(`/materials/${id}`);
+      showToast(`Deleted ${name}`);
+      loadStock();
     } catch (err) {
       showToast(err.message, true);
     }

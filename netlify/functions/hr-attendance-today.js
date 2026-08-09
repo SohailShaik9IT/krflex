@@ -9,10 +9,13 @@ exports.handler = async (event) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const rows = await sql`
-      SELECT e.name, e.designation, a.status, a.check_in
+      SELECT e.name, e.designation, e.mobile, a.status, a.check_in,
+             b.name AS branch_name
       FROM attendance a
       JOIN employees e ON e.id = a.employee_id
+      LEFT JOIN branches b ON b.id = e.branch_id
       WHERE a.work_date = ${today}
+      ORDER BY b.name NULLS LAST, e.name
     `;
     return json(200, rows);
   } catch (err) {

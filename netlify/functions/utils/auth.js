@@ -25,7 +25,7 @@ function verifyToken(event) {
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*', // tighten to your Netlify domain after first deploy
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
 };
 
 function json(statusCode, body) {

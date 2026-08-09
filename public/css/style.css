@@ -96,6 +96,10 @@ body {
   padding: 9px 20px; border: none; border-radius: 8px; background: var(--navy); color: white;
   font-weight: 600; cursor: pointer;
 }
+.form-actions button + button { margin-left: 8px; }
+.form-actions .btn-secondary {
+  background: white; color: var(--navy); border: 1px solid var(--border);
+}
 
 /* ---------- Tables ---------- */
 table.data-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow:hidden; }
@@ -106,6 +110,10 @@ table.data-table th { background: #f0f2f7; color: var(--navy); font-weight: 600;
 table.data-table tr:hover td { background: #fafbfd; }
 .link-btn { background: none; border: none; color: var(--navy); font-weight: 600; text-decoration: underline; cursor: pointer; padding:0; }
 .qty-btn { padding: 2px 10px; border-radius: 6px; border: 1px solid var(--border); background: white; cursor: pointer; margin: 0 3px; }
+.qty-btn.danger-btn { color: var(--danger); border-color: #f0c2c2; background: #fff5f5; }
+.qty-btn.danger-btn:hover { background: #ffe8e8; }
+
+.chart-wrap { position: relative; width: 100%; min-height: 320px; }
 
 .status-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
 .status-inprogress { background: #fff3d6; color: var(--warn); }

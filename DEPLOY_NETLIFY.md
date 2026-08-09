@@ -40,7 +40,7 @@ npm install
 node scripts/seed.js
 ```
 
-This creates `username: admin`, `password: Admin@123`. **Change this password** after your
+This creates `username: smdquadeer@krflex.com`, `password: Ayesha@2017`. **Change this password** after your
 first login (use `POST /api/auth/register` while logged in as admin to create a new admin
 account, then remove/disable the seeded one directly in the `users` table).
 
@@ -80,7 +80,7 @@ git push -u origin main
 ## 5. Test it
 
 1. Open your Netlify URL → you'll land on the login screen.
-2. Log in with `admin` / `Admin@123`.
+2. Log in with `smdquadeer@krflex.com` / `Ayesha@2017`.
 3. Try each tab: Dashboard (switch Daily/Weekly/Monthly/Yearly), Material Stock (add a
    material, use +/-), Customers (add one, click their name to see the order tracker),
    Orders (add an order, change its status to Delivered), Activity & Logs, and Me (HR).

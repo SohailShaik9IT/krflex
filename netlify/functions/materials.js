@@ -41,5 +41,33 @@ exports.handler = async (event) => {
     }
   }
 
+  if (event.httpMethod === 'DELETE') {
+    const { error, user } = requireAdmin(event);
+    if (error) return error;
+    try {
+      const id = event.queryStringParameters && event.queryStringParameters.id;
+      if (!id) return json(400, { message: 'id is required' });
+
+      const existing = await sql`SELECT * FROM material_stock WHERE id = ${id}`;
+      if (!existing.length) return json(404, { message: 'Material not found' });
+
+      const inUse = await sql`SELECT id FROM orders WHERE material_id = ${id} LIMIT 1`;
+      if (inUse.length) {
+        return json(409, { message: 'Cannot delete: this material is used by existing orders' });
+      }
+
+      await sql`DELETE FROM material_stock WHERE id = ${id}`;
+      const now = Math.floor(Date.now() / 1000);
+      await sql`
+        INSERT INTO activity_logs (user_id, action, entity_type, entity_id, details, logged_at)
+        VALUES (${user.sub}, 'Material Deleted', 'MaterialStock', ${id}, ${existing[0].media_name}, ${now})
+      `;
+      return json(200, { ok: true });
+    } catch (err) {
+      console.error(err);
+      return json(500, { message: 'Server error', detail: String(err) });
+    }
+  }
+
   return json(405, { message: 'Method not allowed' });
 };

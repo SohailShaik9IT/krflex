@@ -31,7 +31,8 @@ const KRFlexAPI = (() => {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    if (resp.status === 401) {
+    // Login failures also return 401 — don't treat those as an expired session.
+    if (resp.status === 401 && path !== '/auth/login') {
       clearSession();
       window.location.href = '/index.html';
       throw new Error('Session expired');
@@ -56,6 +57,7 @@ const KRFlexAPI = (() => {
   };
   const post = (path, body) => request('POST', path, body);
   const patch = (path, body) => request('PATCH', path, body);
+  const del = (path) => request('DELETE', path);
 
   async function login(username, password) {
     const result = await post('/auth/login', { username, password });
@@ -68,5 +70,5 @@ const KRFlexAPI = (() => {
     window.location.href = '/index.html';
   }
 
-  return { get, post, patch, login, logout, isLoggedIn, isAdmin, fullName, role, userId };
+  return { get, post, patch, del, login, logout, isLoggedIn, isAdmin, fullName, role, userId };
 })();

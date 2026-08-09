@@ -8,7 +8,12 @@ exports.handler = async (event) => {
     const { error } = requireAuth(event);
     if (error) return error;
     try {
-      const rows = await sql`SELECT * FROM employees ORDER BY name`;
+      const rows = await sql`
+      SELECT e.*, b.name AS branch_name
+      FROM employees e
+      LEFT JOIN branches b ON b.id = e.branch_id
+      ORDER BY e.name
+    `;
       return json(200, rows);
     } catch (err) {
       console.error(err);
@@ -22,10 +27,11 @@ exports.handler = async (event) => {
     try {
       const { name, mobile, email, designation, joiningDate, salary, branchId } = JSON.parse(event.body || '{}');
       if (!name || !mobile) return json(400, { message: 'name and mobile are required' });
+      if (!branchId) return json(400, { message: 'branchId is required' });
 
       const rows = await sql`
         INSERT INTO employees (name, mobile, email, designation, branch_id, joining_date, salary, status)
-        VALUES (${name}, ${mobile}, ${email || null}, ${designation || null}, ${branchId || null},
+        VALUES (${name}, ${mobile}, ${email || null}, ${designation || null}, ${branchId},
                 ${joiningDate || Math.floor(Date.now() / 1000)}, ${salary || null}, 'Active')
         RETURNING *
       `;

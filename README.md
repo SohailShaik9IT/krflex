@@ -40,8 +40,8 @@ krflex-netlify/
 ## Logins
 
 Seed once via `node scripts/seed.js` (see DEPLOY_NETLIFY.md):
-- **Username:** `admin`
-- **Password:** `Admin@123`
+- **Username:** `smdquadeer@krflex.com`
+- **Password:** `Ayesha@2017`
 - **Role:** Admin (SMD Quadeer)
 
 - **Admin** sees: Dashboard, Material Stock, Customers, Orders, Activity & Logs, Me (HR)

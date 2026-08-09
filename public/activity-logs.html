@@ -28,14 +28,55 @@
 
           <div class="panel">
             <h3>Recent Activity</h3>
+            <p style="color:var(--muted); font-size:0.85rem; margin-top:-8px;">
+              Order tracker actions only (order created / status changes).
+            </p>
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div>
+                <label>Search by customer name</label>
+                <input id="searchName" placeholder="Customer name" />
+              </div>
+              <div>
+                <label>Search by mobile number</label>
+                <input id="searchMobile" placeholder="Mobile number" />
+              </div>
+            </div>
+            <div class="form-actions" style="margin-top:0; margin-bottom:16px;">
+              <button type="button" id="searchBtn">Search</button>
+              <button type="button" id="clearSearchBtn" class="btn-secondary">Clear</button>
+            </div>
             <table class="data-table">
-              <thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
-              <tbody id="logRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Action</th>
+                  <th>Username</th>
+                  <th>Employee Name</th>
+                  <th>Customer</th>
+                  <th>Mobile</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="logRows"><tr><td colspan="7">Loading...</td></tr></tbody>
             </table>
           </div>
         </div>
       </div>
     `;
+
+    document.getElementById('searchBtn').addEventListener('click', () => loadLogs());
+    document.getElementById('clearSearchBtn').addEventListener('click', () => {
+      document.getElementById('searchName').value = '';
+      document.getElementById('searchMobile').value = '';
+      loadLogs();
+    });
+    document.getElementById('searchName').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadLogs();
+    });
+    document.getElementById('searchMobile').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loadLogs();
+    });
+
     loadSummary();
     loadLogs();
   }
@@ -53,18 +94,27 @@
   }
 
   async function loadLogs() {
+    const name = document.getElementById('searchName').value.trim();
+    const mobile = document.getElementById('searchMobile').value.trim();
+    const params = {};
+    if (name) params.name = name;
+    if (mobile) params.mobile = mobile;
+
     try {
-      const logs = await KRFlexAPI.get('/activity-logs');
+      const logs = await KRFlexAPI.get('/activity-logs', params);
       const tbody = document.getElementById('logRows');
       if (!logs.length) {
-        tbody.innerHTML = '<tr><td colspan="4">No activity recorded yet.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7">No order tracker activity found.</td></tr>';
         return;
       }
       tbody.innerHTML = logs.map(l => `
         <tr>
           <td>${epochToDateTimeStr(l.logged_at)}</td>
           <td>${l.action}</td>
-          <td>${l.entity_type || '-'}</td>
+          <td>${l.username || '-'}</td>
+          <td>${l.employee_name || '-'}</td>
+          <td>${l.customer_name || '-'}</td>
+          <td>${l.customer_mobile || '-'}</td>
           <td>${l.details || '-'}</td>
         </tr>
       `).join('');
