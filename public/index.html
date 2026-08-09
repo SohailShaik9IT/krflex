@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KRFLEX Printing Solutions - Login</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>🖨️ KRFLEX Printing Solutions</h1>
+    <p class="subtitle">Founder — SMD Quadeer<br/>Guntakal &amp; Patikonda Branches</p>
+    <input type="text" id="username" placeholder="Username" autocomplete="username" />
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+    <button id="loginBtn">Login</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  // If already logged in, skip straight to the right home page
+  if (KRFlexAPI.isLoggedIn()) {
+    window.location.href = KRFlexAPI.isAdmin() ? '/dashboard.html' : '/me.html';
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', doLogin);
+  document.getElementById('password').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const errorEl = document.getElementById('errorMsg');
+    errorEl.textContent = '';
+    if (!username || !password) {
+      errorEl.textContent = 'Please enter username and password.';
+      return;
+    }
+    try {
+      const result = await KRFlexAPI.login(username, password);
+      window.location.href = result.role === 'Admin' ? '/dashboard.html' : '/me.html';
+    } catch (err) {
+      errorEl.textContent = err.message || 'Login failed';
+    }
+  }
+</script>
+</body>
+</html>

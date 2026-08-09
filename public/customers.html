@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Customers - KRFLEX</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="app"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script>
+  requireAdminPage();
+
+  function render() {
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${renderSidebar('customers.html')}
+        <div class="main-content">
+          <h1>👥 Customers</h1>
+
+          <div class="panel">
+            <h3>➕ Add New Customer</h3>
+            <div class="form-grid">
+              <div><label>Name</label><input id="custName" /></div>
+              <div><label>Mobile Number</label><input id="custMobile" /></div>
+              <div><label>Email (optional)</label><input id="custEmail" /></div>
+              <div><label>Address</label><input id="custAddress" /></div>
+            </div>
+            <div class="form-actions"><button id="addCustBtn">Add Customer</button></div>
+          </div>
+
+          <div class="panel">
+            <h3>All Customers</h3>
+            <p style="color:var(--muted); font-size:0.85rem; margin-top:-8px;">Click a customer's name to view their order tracker.</p>
+            <table class="data-table">
+              <thead><tr><th>Name</th><th>Mobile</th><th>Email</th><th>Address</th><th>Created</th></tr></thead>
+              <tbody id="custRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="modalHolder"></div>
+    `;
+
+    document.getElementById('addCustBtn').addEventListener('click', addCustomer);
+    loadCustomers();
+  }
+
+  async function loadCustomers() {
+    try {
+      const customers = await KRFlexAPI.get('/customers');
+      const tbody = document.getElementById('custRows');
+      if (!customers.length) {
+        tbody.innerHTML = '<tr><td colspan="5">No customers added yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td><button class="link-btn" onclick="openHistory(${c.id}, '${c.name.replace(/'/g, "\\'")}')">${c.name}</button></td>
+          <td>${c.mobile}</td>
+          <td>${c.email || '-'}</td>
+          <td>${c.address}</td>
+          <td>${epochToDateStr(c.created_at)}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function addCustomer() {
+    const name = document.getElementById('custName').value.trim();
+    const mobile = document.getElementById('custMobile').value.trim();
+    const email = document.getElementById('custEmail').value.trim();
+    const address = document.getElementById('custAddress').value.trim();
+    if (!name || !mobile || !address) {
+      showToast('Name, Mobile, and Address are required', true);
+      return;
+    }
+    try {
+      await KRFlexAPI.post('/customers', { name, mobile, email: email || null, address });
+      showToast(`Added ${name}`);
+      render();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function openHistory(id, name) {
+    const holder = document.getElementById('modalHolder');
+    holder.innerHTML = `
+      <div class="modal-overlay" onclick="if(event.target===this) this.remove()">
+        <div class="modal-box">
+          <button class="modal-close" onclick="document.getElementById('modalHolder').innerHTML=''">✕</button>
+          <h3>${name} — Order Tracker</h3>
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Materials</th><th>Delivered Date &amp; Time</th></tr></thead>
+            <tbody id="historyRows"><tr><td colspan="3">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    try {
+      const history = await KRFlexAPI.get(`/customers/${id}/orders`);
+      const tbody = document.getElementById('historyRows');
+      if (!history.length) {
+        tbody.innerHTML = '<tr><td colspan="3">No orders yet for this customer.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = history.map(h => `
+        <tr>
+          <td>${epochToDateTimeStr(h.date)}</td>
+          <td>${h.material}</td>
+          <td>${h.delivered_datetime ? epochToDateTimeStr(h.delivered_datetime) : 'Pending'}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

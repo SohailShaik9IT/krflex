@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Me - HR - KRFLEX</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="app"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script>
+  requireLogin();
+
+  let employees = [];
+
+  function render() {
+    const admin = KRFlexAPI.isAdmin();
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${renderSidebar('me.html')}
+        <div class="main-content">
+          <h1>🙍 Me — HR Portal</h1>
+          <p style="color:var(--muted)">Logged in as <strong>${KRFlexAPI.fullName()}</strong> (${KRFlexAPI.role()})</p>
+
+          <div class="panel">
+            <h3>Today's Attendance</h3>
+            <table class="data-table">
+              <thead><tr><th>Name</th><th>Designation</th><th>Status</th><th>Checked In</th></tr></thead>
+              <tbody id="attRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+            </table>
+          </div>
+
+          ${admin ? `
+          <div class="panel">
+            <h3>Employees</h3>
+            <table class="data-table">
+              <thead><tr><th>Name</th><th>Mobile</th><th>Designation</th><th>Status</th></tr></thead>
+              <tbody id="empRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <h3>➕ Add Employee</h3>
+            <div class="form-grid">
+              <div><label>Name</label><input id="empName" /></div>
+              <div><label>Mobile</label><input id="empMobile" /></div>
+              <div><label>Email (optional)</label><input id="empEmail" /></div>
+              <div><label>Designation</label><input id="empDesignation" /></div>
+              <div><label>Joining Date</label><input id="empJoining" type="date" /></div>
+              <div><label>Salary</label><input id="empSalary" type="number" min="0" step="500" /></div>
+            </div>
+            <div class="form-actions"><button id="addEmpBtn">Add Employee</button></div>
+          </div>
+
+          <div class="panel">
+            <h3>✅ Mark Attendance</h3>
+            <div class="form-grid">
+              <div><label>Employee</label><select id="attEmp"></select></div>
+              <div><label>Status</label>
+                <select id="attStatus">
+                  <option>Present</option><option>Absent</option><option>Leave</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions"><button id="markAttBtn">Mark Attendance</button></div>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+    loadAttendanceToday();
+    if (admin) {
+      loadEmployees();
+      document.getElementById('addEmpBtn').addEventListener('click', addEmployee);
+      document.getElementById('markAttBtn').addEventListener('click', markAttendance);
+    }
+  }
+
+  async function loadAttendanceToday() {
+    try {
+      const rows = await KRFlexAPI.get('/hr/attendance/today');
+      const tbody = document.getElementById('attRows');
+      tbody.innerHTML = rows.length
+        ? rows.map(r => `<tr><td>${r.name}</td><td>${r.designation || '-'}</td><td>${r.status}</td><td>${r.check_in ? epochToDateTimeStr(r.check_in) : '-'}</td></tr>`).join('')
+        : '<tr><td colspan="4">No attendance marked for today yet.</td></tr>';
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function loadEmployees() {
+    try {
+      employees = await KRFlexAPI.get('/hr/employees');
+      document.getElementById('empRows').innerHTML = employees.length
+        ? employees.map(e => `<tr><td>${e.name}</td><td>${e.mobile}</td><td>${e.designation || '-'}</td><td>${e.status}</td></tr>`).join('')
+        : '<tr><td colspan="4">No employees added yet.</td></tr>';
+      document.getElementById('attEmp').innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function addEmployee() {
+    const name = document.getElementById('empName').value.trim();
+    const mobile = document.getElementById('empMobile').value.trim();
+    const email = document.getElementById('empEmail').value.trim();
+    const designation = document.getElementById('empDesignation').value.trim();
+    const joining = document.getElementById('empJoining').value;
+    const salary = parseFloat(document.getElementById('empSalary').value) || null;
+    if (!name || !mobile) {
+      showToast('Name and Mobile are required', true);
+      return;
+    }
+    try {
+      await KRFlexAPI.post('/hr/employees', {
+        name, mobile, email: email || null, designation,
+        joiningDate: joining ? Math.floor(new Date(joining + 'T00:00:00Z').getTime() / 1000) : undefined,
+        salary,
+      });
+      showToast(`Added ${name}`);
+      render();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function markAttendance() {
+    const employeeId = document.getElementById('attEmp').value;
+    const status = document.getElementById('attStatus').value;
+    if (!employeeId) { showToast('Add employees first', true); return; }
+    try {
+      await KRFlexAPI.post(`/hr/attendance?employeeId=${employeeId}&status=${status}`, {});
+      showToast(`Marked attendance as ${status}`);
+      loadAttendanceToday();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

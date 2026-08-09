@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Material Stock - KRFLEX</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="app"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script>
+  requireAdminPage();
+
+  function render() {
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${renderSidebar('material-stock.html')}
+        <div class="main-content">
+          <h1>🧵 Material Stock</h1>
+
+          <div class="panel">
+            <h3>➕ Add New Material</h3>
+            <div class="form-grid">
+              <div><label>Media Name</label><input id="mediaName" /></div>
+              <div><label>Size</label><input id="size" placeholder="e.g. 3.2m x 50m" /></div>
+              <div><label>No. of Rolls</label><input id="noOfRolls" type="number" min="0" value="0" /></div>
+              <div><label>Media Brand</label><input id="mediaBrand" /></div>
+            </div>
+            <div class="form-actions"><button id="addMaterialBtn">Add Material</button></div>
+          </div>
+
+          <div class="panel">
+            <h3>Current Stock</h3>
+            <table class="data-table">
+              <thead><tr><th>Media Name</th><th>Size</th><th>No. of Rolls</th><th>Media Brand</th><th>Adjust</th></tr></thead>
+              <tbody id="stockRows"><tr><td colspan="5">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('addMaterialBtn').addEventListener('click', addMaterial);
+    loadStock();
+  }
+
+  async function loadStock() {
+    try {
+      const materials = await KRFlexAPI.get('/materials');
+      const tbody = document.getElementById('stockRows');
+      if (!materials.length) {
+        tbody.innerHTML = '<tr><td colspan="5">No materials added yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = materials.map(m => `
+        <tr>
+          <td>${m.media_name}</td>
+          <td>${m.size}</td>
+          <td id="rolls_${m.id}">${m.no_of_rolls}</td>
+          <td>${m.media_brand}</td>
+          <td>
+            <button class="qty-btn" onclick="adjust(${m.id}, -1)">➖</button>
+            <button class="qty-btn" onclick="adjust(${m.id}, 1)">➕</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function addMaterial() {
+    const mediaName = document.getElementById('mediaName').value.trim();
+    const size = document.getElementById('size').value.trim();
+    const noOfRolls = parseInt(document.getElementById('noOfRolls').value, 10) || 0;
+    const mediaBrand = document.getElementById('mediaBrand').value.trim();
+    if (!mediaName || !size || !mediaBrand) {
+      showToast('Media Name, Size, and Media Brand are required', true);
+      return;
+    }
+    try {
+      await KRFlexAPI.post('/materials', { mediaName, size, noOfRolls, mediaBrand });
+      showToast(`Added ${mediaName}`);
+      render();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function adjust(id, delta) {
+    try {
+      const updated = await KRFlexAPI.patch(`/materials/${id}/adjust`, { delta });
+      document.getElementById(`rolls_${id}`).textContent = updated.no_of_rolls;
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

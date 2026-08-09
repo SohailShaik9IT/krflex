@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Activity & Logs - KRFLEX</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="app"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script>
+  requireAdminPage();
+
+  function render() {
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${renderSidebar('activity-logs.html')}
+        <div class="main-content">
+          <h1>📝 Activity &amp; Logs</h1>
+
+          <div class="panel">
+            <h3>Order Status Summary</h3>
+            <div class="metric-row" id="summaryRow"><p>Loading...</p></div>
+          </div>
+
+          <div class="panel">
+            <h3>Recent Activity</h3>
+            <table class="data-table">
+              <thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+              <tbody id="logRows"><tr><td colspan="4">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+    loadSummary();
+    loadLogs();
+  }
+
+  async function loadSummary() {
+    try {
+      const summary = await KRFlexAPI.get('/activity-logs/order-status-summary');
+      const el = document.getElementById('summaryRow');
+      el.innerHTML = summary.length
+        ? summary.map(s => `<div class="metric-card"><div class="label">${s.status}</div><div class="value">${s.count}</div></div>`).join('')
+        : '<p>No orders yet.</p>';
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function loadLogs() {
+    try {
+      const logs = await KRFlexAPI.get('/activity-logs');
+      const tbody = document.getElementById('logRows');
+      if (!logs.length) {
+        tbody.innerHTML = '<tr><td colspan="4">No activity recorded yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = logs.map(l => `
+        <tr>
+          <td>${epochToDateTimeStr(l.logged_at)}</td>
+          <td>${l.action}</td>
+          <td>${l.entity_type || '-'}</td>
+          <td>${l.details || '-'}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

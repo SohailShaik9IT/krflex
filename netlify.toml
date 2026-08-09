@@ -1,0 +1,89 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  command = "npm install"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Clean /api/* URLs -> underlying function files
+[[redirects]]
+  from = "/api/auth/login"
+  to = "/.netlify/functions/auth-login"
+  status = 200
+
+[[redirects]]
+  from = "/api/auth/register"
+  to = "/.netlify/functions/auth-register"
+  status = 200
+
+[[redirects]]
+  from = "/api/dashboard"
+  to = "/.netlify/functions/dashboard"
+  status = 200
+
+[[redirects]]
+  from = "/api/branches"
+  to = "/.netlify/functions/branches"
+  status = 200
+
+[[redirects]]
+  from = "/api/materials/:id/adjust"
+  to = "/.netlify/functions/materials-adjust?id=:id"
+  status = 200
+
+[[redirects]]
+  from = "/api/materials"
+  to = "/.netlify/functions/materials"
+  status = 200
+
+[[redirects]]
+  from = "/api/customers/:id/orders"
+  to = "/.netlify/functions/customer-orders?id=:id"
+  status = 200
+
+[[redirects]]
+  from = "/api/customers"
+  to = "/.netlify/functions/customers"
+  status = 200
+
+[[redirects]]
+  from = "/api/orders/:id/status"
+  to = "/.netlify/functions/order-status?id=:id"
+  status = 200
+
+[[redirects]]
+  from = "/api/orders"
+  to = "/.netlify/functions/orders"
+  status = 200
+
+[[redirects]]
+  from = "/api/activity-logs/order-status-summary"
+  to = "/.netlify/functions/order-status-summary"
+  status = 200
+
+[[redirects]]
+  from = "/api/activity-logs"
+  to = "/.netlify/functions/activity-logs"
+  status = 200
+
+[[redirects]]
+  from = "/api/hr/employees"
+  to = "/.netlify/functions/hr-employees"
+  status = 200
+
+[[redirects]]
+  from = "/api/hr/attendance/today"
+  to = "/.netlify/functions/hr-attendance-today"
+  status = 200
+
+[[redirects]]
+  from = "/api/hr/attendance"
+  to = "/.netlify/functions/hr-attendance"
+  status = 200
+
+# SPA fallback for the static frontend
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

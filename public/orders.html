@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Orders - KRFLEX</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="app"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script>
+  requireAdminPage();
+
+  let customers = [];
+  let materials = [];
+
+  function render() {
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${renderSidebar('orders.html')}
+        <div class="main-content">
+          <h1>📦 Orders</h1>
+
+          <div class="panel">
+            <h3>➕ Add New Order</h3>
+            <div class="form-grid">
+              <div><label>Customer</label><select id="ordCustomer"></select></div>
+              <div><label>Order Name</label><input id="ordName" /></div>
+              <div><label>Media Name</label><select id="ordMedia"></select></div>
+              <div></div>
+              <div><label>Width (ft)</label><input id="ordWidth" type="number" min="0" step="0.5" /></div>
+              <div><label>Height (ft)</label><input id="ordHeight" type="number" min="0" step="0.5" /></div>
+              <div><label>Delivery Date</label><input id="ordDate" type="date" /></div>
+              <div><label>Delivery Time</label><input id="ordTime" type="time" value="17:00" /></div>
+            </div>
+            <div class="form-actions"><button id="addOrderBtn">Create Order</button></div>
+          </div>
+
+          <div class="panel">
+            <h3>Order List</h3>
+            <div class="form-grid" style="margin-bottom:14px;">
+              <div><label>From</label><input id="fromDate" type="date" /></div>
+              <div><label>To</label><input id="toDate" type="date" /></div>
+            </div>
+            <button class="btn" style="width:auto; padding:8px 18px;" id="applyFilterBtn">Apply Filter</button>
+            <div style="overflow-x:auto; margin-top:14px;">
+              <table class="data-table">
+                <thead><tr>
+                  <th>Customer</th><th>Order Name</th><th>Media</th><th>Sq.Ft</th>
+                  <th>Order Date</th><th>Delivery</th><th>Status</th>
+                </tr></thead>
+                <tbody id="orderRows"><tr><td colspan="7">Loading...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('addOrderBtn').addEventListener('click', addOrder);
+    document.getElementById('applyFilterBtn').addEventListener('click', loadOrders);
+    loadLookups().then(loadOrders);
+  }
+
+  async function loadLookups() {
+    try {
+      [customers, materials] = await Promise.all([
+        KRFlexAPI.get('/customers'),
+        KRFlexAPI.get('/materials'),
+      ]);
+      document.getElementById('ordCustomer').innerHTML =
+        customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('') ||
+        '<option value="">Add a customer first</option>';
+      document.getElementById('ordMedia').innerHTML =
+        materials.map(m => `<option value="${m.id}">${m.media_name}</option>`).join('') ||
+        '<option value="">Add material first</option>';
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function loadOrders() {
+    try {
+      const from = document.getElementById('fromDate').value;
+      const to = document.getElementById('toDate').value;
+      const params = {};
+      if (from) params.from = Math.floor(new Date(from + 'T00:00:00Z').getTime() / 1000);
+      if (to) params.to = Math.floor(new Date(to + 'T23:59:59Z').getTime() / 1000);
+
+      const orders = await KRFlexAPI.get('/orders', params);
+      const tbody = document.getElementById('orderRows');
+      if (!orders.length) {
+        tbody.innerHTML = '<tr><td colspan="7">No orders found for the selected range.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td>${o.customer_name}</td>
+          <td>${o.order_name}</td>
+          <td>${o.material_name}</td>
+          <td>${Number(o.sqft).toFixed(1)} ft²</td>
+          <td>${epochToDateStr(o.order_date)}</td>
+          <td>${epochToDateTimeStr(o.delivery_datetime)}</td>
+          <td>
+            <select onchange="updateStatus(${o.id}, this.value)">
+              ${['In Progress','Completed','Delivered'].map(s =>
+                `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`
+              ).join('')}
+            </select>
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function addOrder() {
+    const customerId = document.getElementById('ordCustomer').value;
+    const orderName = document.getElementById('ordName').value.trim();
+    const materialId = document.getElementById('ordMedia').value;
+    const widthFt = parseFloat(document.getElementById('ordWidth').value);
+    const heightFt = parseFloat(document.getElementById('ordHeight').value);
+    const date = document.getElementById('ordDate').value;
+    const time = document.getElementById('ordTime').value || '17:00';
+
+    if (!customerId || !orderName || !materialId || !widthFt || !heightFt || !date) {
+      showToast('Please fill all order fields', true);
+      return;
+    }
+    const deliveryDatetime = Math.floor(new Date(`${date}T${time}:00Z`).getTime() / 1000);
+
+    try {
+      await KRFlexAPI.post('/orders', {
+        customerId: parseInt(customerId, 10),
+        orderName,
+        materialId: parseInt(materialId, 10),
+        widthFt, heightFt,
+        deliveryDatetime,
+      });
+      showToast(`Order '${orderName}' created`);
+      render();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  async function updateStatus(id, status) {
+    try {
+      await KRFlexAPI.patch(`/orders/${id}/status`, { status });
+      showToast(`Order #${id} -> ${status}`);
+      loadOrders();
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

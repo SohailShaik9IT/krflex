@@ -1,0 +1,134 @@
+:root {
+  --navy: #14213d;
+  --gold: #fca311;
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --border: #e2e5eb;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --success: #2e7d32;
+  --warn: #b26a00;
+  --danger: #c62828;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- Login ---------- */
+.login-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+.login-card {
+  background: var(--card);
+  padding: 40px;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 360px;
+}
+.login-card h1 { font-size: 1.4rem; margin: 0 0 4px; color: var(--navy); text-align:center; }
+.login-card p.subtitle { text-align:center; color: var(--muted); margin: 0 0 24px; font-size: 0.9rem; }
+.login-card input {
+  width: 100%; padding: 10px 12px; margin-bottom: 12px;
+  border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
+}
+.login-card button, .btn {
+  width: 100%; padding: 10px 12px; border: none; border-radius: 8px;
+  background: var(--navy); color: white; font-weight: 600; cursor: pointer; font-size: 0.95rem;
+}
+.login-card button:hover, .btn:hover { opacity: 0.9; }
+.error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 8px; text-align:center; }
+
+/* ---------- App shell ---------- */
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 230px; background: var(--navy); color: white; padding: 20px 14px; flex-shrink: 0;
+}
+.sidebar h2 { font-size: 1.1rem; margin: 0 0 2px; }
+.sidebar .role-tag { font-size: 0.75rem; color: #b7c1d6; margin-bottom: 20px; display:block; }
+.sidebar nav a {
+  display: block; color: #d9e0ec; text-decoration: none; padding: 10px 12px; border-radius: 8px;
+  margin-bottom: 4px; font-size: 0.92rem;
+}
+.sidebar nav a.active, .sidebar nav a:hover { background: rgba(255,255,255,0.12); color: white; }
+.sidebar .logout-btn {
+  margin-top: 20px; width: 100%; background: var(--gold); color: var(--navy);
+  border: none; padding: 8px; border-radius: 8px; cursor: pointer; font-weight: 600;
+}
+.main-content { flex: 1; padding: 28px 32px; overflow-x: auto; }
+.main-content h1 { color: var(--navy); margin-top: 0; }
+
+/* ---------- Cards / metrics ---------- */
+.metric-row { display:flex; gap:16px; flex-wrap: wrap; margin-bottom: 24px; }
+.metric-card {
+  background: var(--card); border-radius: 12px; padding: 18px 22px; box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  flex: 1; min-width: 180px;
+}
+.metric-card .label { color: var(--muted); font-size: 0.85rem; margin-bottom: 6px; }
+.metric-card .value { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
+
+.filter-row { display:flex; gap:8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-row button {
+  padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border); background: white; cursor: pointer;
+}
+.filter-row button.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+/* ---------- Panels / forms ---------- */
+.panel { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+.panel h3 { margin-top: 0; color: var(--navy); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-grid.single { grid-template-columns: 1fr; }
+.form-grid label { font-size: 0.85rem; color: var(--muted); display:block; margin-bottom: 4px; }
+.form-grid input, .form-grid select, .form-grid textarea {
+  width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.92rem;
+}
+.form-actions { margin-top: 14px; }
+.form-actions button {
+  padding: 9px 20px; border: none; border-radius: 8px; background: var(--navy); color: white;
+  font-weight: 600; cursor: pointer;
+}
+
+/* ---------- Tables ---------- */
+table.data-table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow:hidden; }
+table.data-table th, table.data-table td {
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 0.9rem;
+}
+table.data-table th { background: #f0f2f7; color: var(--navy); font-weight: 600; }
+table.data-table tr:hover td { background: #fafbfd; }
+.link-btn { background: none; border: none; color: var(--navy); font-weight: 600; text-decoration: underline; cursor: pointer; padding:0; }
+.qty-btn { padding: 2px 10px; border-radius: 6px; border: 1px solid var(--border); background: white; cursor: pointer; margin: 0 3px; }
+
+.status-badge { padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600; }
+.status-inprogress { background: #fff3d6; color: var(--warn); }
+.status-completed { background: #e0e9ff; color: #2f4bb0; }
+.status-delivered { background: #dff4e0; color: var(--success); }
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index: 50;
+}
+.modal-box { background: white; border-radius: 12px; padding: 24px; width: 90%; max-width: 520px; max-height: 80vh; overflow-y: auto; }
+.modal-box h3 { margin-top: 0; color: var(--navy); }
+.modal-close { float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+
+.toast {
+  position: fixed; bottom: 20px; right: 20px; background: var(--navy); color: white; padding: 12px 18px;
+  border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 100;
+}
+.toast.error { background: var(--danger); }
+
+@media (max-width: 800px) {
+  .app-shell { flex-direction: column; }
+  .sidebar { width: 100%; display:flex; align-items:center; justify-content:space-between; flex-wrap: wrap; }
+  .sidebar nav { display:flex; gap: 4px; flex-wrap: wrap; }
+  .form-grid { grid-template-columns: 1fr; }
+}

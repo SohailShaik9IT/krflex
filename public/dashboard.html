@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard - KRFLEX</title>
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div id="app"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/shell.js"></script>
+<script>
+  requireAdminPage();
+
+  let currentPeriod = 'daily';
+
+  function render() {
+    document.getElementById('app').innerHTML = `
+      <div class="app-shell">
+        ${renderSidebar('dashboard.html')}
+        <div class="main-content">
+          <h1>📊 Dashboard</h1>
+          <div class="filter-row" id="filterRow">
+            ${['daily','weekly','monthly','yearly'].map(p =>
+              `<button data-period="${p}" class="${p === currentPeriod ? 'active' : ''}">${p[0].toUpperCase()+p.slice(1)}</button>`
+            ).join('')}
+          </div>
+          <div class="metric-row" id="metrics"><p>Loading...</p></div>
+        </div>
+      </div>
+    `;
+
+    document.querySelectorAll('#filterRow button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentPeriod = btn.dataset.period;
+        render();
+      });
+    });
+
+    loadDashboard();
+  }
+
+  async function loadDashboard() {
+    try {
+      const data = await KRFlexAPI.get('/dashboard', { period: currentPeriod });
+      document.getElementById('metrics').innerHTML = `
+        <div class="metric-card"><div class="label">👷 Employees Working Today</div><div class="value">${data.employeesWorkingToday}</div></div>
+        <div class="metric-card"><div class="label">👥 Total Customers</div><div class="value">${data.totalCustomers}</div></div>
+        <div class="metric-card"><div class="label">📐 Sq.Ft Sold (${currentPeriod})</div><div class="value">${Number(data.totalSqftSold).toFixed(2)}</div></div>
+        <div class="metric-card"><div class="label">📦 Total Orders (${currentPeriod})</div><div class="value">${data.totalOrders}</div></div>
+      `;
+    } catch (err) {
+      showToast(err.message, true);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>

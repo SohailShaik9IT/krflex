@@ -1,0 +1,11 @@
+{
+  "name": "krflex-printing-solutions",
+  "version": "1.0.0",
+  "description": "KRFLEX Printing Solutions - Netlify (Functions + Static UI) + Neon Postgres",
+  "private": true,
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.1",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
+  }
+}
